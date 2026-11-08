@@ -1,0 +1,894 @@
+Kamu adalah Senior Full-Stack Developer, Product Manager, UI/UX Designer, dan AI Engineer. Bangun sebuah aplikasi web fungsional bernama **StokPas** menggunakan Google AI Studio Build (vibe coding).
+
+PENTING: Saya hanya memiliki waktu sekitar 1,5 jam untuk menyelesaikan prototype ini. Prioritaskan aplikasi yang benar-benar berjalan, memiliki satu alur utama yang mulus, dan bisa didemonstrasikan langsung kepada juri. Jangan membuat fitur berlebihan. Jangan hanya membuat mockup atau UI statis.
+
+==================================================
+A. RINGKASAN PRODUK
+==================================================
+
+Nama aplikasi: StokPas
+
+Tagline: "Siapkan stok lebih tepat, pahami jam ramai kedaimu."
+
+StokPas adalah aplikasi web berbasis AI untuk membantu pemilik kedai kopi kecil memahami pola penjualan berdasarkan jam operasional, mengidentifikasi menu andalan, dan mempersiapkan stok bahan/menu secara lebih tepat.
+
+Masalah yang diselesaikan:
+- Pemilik kedai tidak mengetahui jam ramai sebenarnya.
+- Stok sering habis ketika jam ramai.
+- Bahan baku berpotensi terbuang karena persiapan berlebihan ketika jam sepi.
+- Pemilik tidak mengetahui menu mana yang benar-benar menguntungkan, bukan sekadar paling banyak terjual.
+
+Target pengguna:
+Owner atau barista kedai kopi kecil dengan 1-3 karyawan yang memiliki data penjualan dari aplikasi kasir/POS atau Excel/CSV, tetapi tidak memiliki kemampuan analisis data.
+
+Studi kasus demo:
+Kopi Senja, sebuah kedai kopi simulasi di Tangerang Selatan dengan 12 menu.
+
+Value proposition:
+StokPas mengubah data transaksi sederhana menjadi informasi jam ramai, menu andalan, dan rekomendasi persiapan stok yang mudah dipahami oleh pemilik kedai.
+
+==================================================
+B. ATURAN UTAMA SISTEM
+==================================================
+
+Ini adalah aturan paling penting dan tidak boleh dilanggar:
+
+1. Seluruh perhitungan numerik wajib dilakukan menggunakan JavaScript/TypeScript secara deterministik.
+2. Gemini AI TIDAK BOLEH menghitung atau mengarang angka.
+3. Gemini hanya menerima JSON berisi hasil analisis yang sudah dihitung oleh aplikasi.
+4. Gemini bertugas memberikan interpretasi, penjelasan, dan rekomendasi dalam bahasa Indonesia.
+5. Semua angka yang ditampilkan harus berasal dari hasil perhitungan kode.
+6. Data contoh harus deterministik menggunakan seeded random generator. Jangan menggunakan Math.random() tanpa seed.
+7. Aplikasi wajib bisa memproses file CSV pengguna, bukan hanya data contoh.
+8. Jangan menggunakan database, autentikasi, login, atau penyimpanan riwayat.
+9. Data cukup disimpan dalam state aplikasi selama sesi berlangsung.
+10. Jangan membuat fitur selain tiga layar yang ditentukan.
+
+==================================================
+C. STRUKTUR APLIKASI: 3 LAYAR
+==================================================
+
+Buat navigasi sederhana dengan tiga tahapan:
+
+1. Upload Data
+2. Dashboard Jam Ramai
+3. Rekomendasi AI
+
+Gunakan navigasi horizontal pada desktop dan navigasi yang tetap nyaman digunakan pada mobile.
+
+Layar berikutnya baru dapat diakses jika data berhasil diproses.
+
+------------------------------
+LAYAR 1: UPLOAD DATA
+------------------------------
+
+Tujuan:
+Memungkinkan pengguna memasukkan data transaksi dan daftar menu.
+
+Judul:
+"Kenali Pola Penjualan Kedaimu"
+
+Subjudul:
+"Upload data penjualan dan biarkan StokPas membantu menemukan pola bisnis kedaimu."
+
+Buat dua area upload yang berbeda.
+
+A. File transaksi.csv
+
+Kolom wajib:
+- tanggal
+- jam
+- nama_menu
+- qty
+
+Contoh:
+tanggal,jam,nama_menu,qty
+2026-09-01,07:30,Kopi Susu Senja,5
+2026-09-01,08:15,Americano,3
+
+B. File menu.csv
+
+Kolom wajib:
+- nama_menu
+- kategori
+- harga_jual
+- hpp
+
+Contoh:
+nama_menu,kategori,harga_jual,hpp
+Kopi Susu Senja,Kopi Susu,18000,6500
+Americano,Coffee,15000,5000
+
+Fitur:
+- Upload menggunakan input file.
+- Mendukung file CSV.
+- Gunakan PapaParse untuk parsing.
+- Tampilkan nama file yang berhasil diunggah.
+- Tampilkan indikator valid atau belum valid.
+- Berikan tombol hapus/ganti file.
+- Validasi semua kolom wajib.
+- Validasi tipe dan isi data.
+- Tanggal harus valid.
+- Jam harus valid dalam format HH:mm atau HH:mm:ss.
+- Qty harus berupa angka positif.
+- Harga jual dan HPP harus berupa angka positif.
+- HPP tidak boleh melebihi harga jual.
+- Nama menu dalam transaksi harus terdaftar dalam menu.csv.
+- Jangan memproses data yang tidak valid.
+- Pesan error harus ramah, jelas, dan spesifik dalam bahasa Indonesia.
+
+Contoh error:
+"Kolom 'qty' belum ditemukan. Pastikan file transaksi memiliki kolom tanggal, jam, nama_menu, dan qty."
+
+"Menu 'Caramel Latte' ditemukan dalam transaksi tetapi belum terdaftar pada menu.csv."
+
+"Baris ke-12 memiliki jumlah transaksi yang tidak valid."
+
+Tambahkan tombol utama:
+"Analisis Penjualan"
+
+Tombol hanya aktif jika kedua file valid.
+
+Tambahkan juga tombol:
+"Pakai Data Contoh"
+
+Tombol ini langsung memuat dataset simulasi Kopi Senja dan menjalankan proses analisis tanpa harus mengunggah file.
+
+Tambahkan tombol kecil:
+"Unduh Contoh CSV"
+
+Tombol mengunduh dua file terpisah:
+- contoh_transaksi.csv
+- contoh_menu.csv
+
+Gunakan Blob dan URL.createObjectURL untuk mengunduh file.
+
+Desain:
+Dua upload card dengan ikon file, drag-and-drop sederhana jika memungkinkan, dan indikator status.
+
+------------------------------
+LAYAR 2: DASHBOARD JAM RAMAI
+------------------------------
+
+Tujuan:
+Menampilkan analisis penjualan yang mudah dipahami oleh pemilik kedai.
+
+Judul:
+"Ringkasan Penjualan Kopi Senja"
+
+Subjudul:
+"Berikut pola penjualan kedaimu berdasarkan data transaksi."
+
+Semua komponen dashboard harus berasal dari hasil perhitungan deterministik.
+
+1. KARTU RINGKASAN
+
+Buat empat kartu:
+
+- Total Omzet
+- Total Produk Terjual
+- Jam Paling Ramai
+- Hari Terlaris
+
+Tambahkan informasi hari tersepi di bagian ringkasan tambahan.
+
+Format mata uang:
+Rp 18.000
+
+2. GRAFIK RATA-RATA TRANSAKSI PER JAM
+
+Gunakan Recharts.
+
+Tampilkan grafik batang dengan:
+- Sumbu X: jam 07.00 sampai 21.00.
+- Sumbu Y: rata-rata jumlah produk terjual per jam.
+- Warna berbeda untuk jam ramai, normal, dan sepi.
+- Tooltip berisi jam, rata-rata qty, dan jumlah transaksi.
+
+Perhitungan:
+- Hitung total qty per jam.
+- Hitung rata-rata qty berdasarkan jumlah hari operasional dalam dataset.
+- Jam ramai jika rata-rata qty per jam >= 1,3 kali rata-rata keseluruhan jam.
+- Jam sepi jika rata-rata qty per jam <= 0,7 kali rata-rata keseluruhan jam.
+- Sisanya dikategorikan normal.
+
+Jangan menentukan jam ramai hanya berdasarkan satu transaksi besar.
+
+3. KARTU INFORMASI JAM
+
+Tampilkan:
+- Jam ramai.
+- Jam normal.
+- Jam sepi.
+
+Contoh format:
+"07.00-09.00 | 16.00-19.00"
+
+Kelompokkan jam berurutan jika memungkinkan.
+
+4. TABEL MENU ANDALAN PER JAM RAMAI
+
+Judul:
+"Menu Andalan di Jam Ramai"
+
+Untuk setiap jam ramai, tampilkan tabel:
+
+| Jam | Nama Menu | Qty | Omzet | Margin |
+|-----|-----------|-----|-------|--------|
+
+Ketentuan:
+- Hanya tampilkan menu yang terjual pada jam ramai.
+- Urutkan berdasarkan qty tertinggi.
+- Tampilkan maksimal 3 menu per jam ramai.
+- Omzet = qty x harga_jual.
+- Profit kotor = qty x (harga_jual - hpp).
+- Margin % = (harga_jual - hpp) / harga_jual x 100.
+
+Jika tidak ada menu yang terjual, tampilkan empty state.
+
+5. INSIGHT SINGKAT
+
+Tambahkan satu bagian:
+"Apa yang Terjadi di Kedaimu?"
+
+Isi berupa insight sederhana yang dihitung kode, misalnya:
+- "Penjualan tertinggi terjadi pada pukul 08.00."
+- "Hari Sabtu merupakan hari dengan penjualan tertinggi."
+- "Penjualan cenderung menurun pada pukul 12.00."
+
+Insight tidak boleh menghasilkan angka yang tidak berasal dari perhitungan.
+
+Tambahkan tombol:
+"Lihat Rekomendasi AI"
+
+Navigasi menuju layar ketiga.
+
+------------------------------
+LAYAR 3: REKOMENDASI AI
+------------------------------
+
+Tujuan:
+Memberikan rekomendasi praktis berdasarkan hasil analisis penjualan.
+
+Judul:
+"Rekomendasi untuk Kedaimu"
+
+Subjudul:
+"AI membantu menerjemahkan data penjualan menjadi langkah yang bisa langsung kamu lakukan."
+
+Sebelum memanggil Gemini, lakukan seluruh perhitungan berikut menggunakan kode.
+
+1. PERHITUNGAN SARAN STOK
+
+Untuk setiap kombinasi jam ramai dan menu andalan:
+
+- Hitung total qty menu pada jam tersebut.
+- Hitung rata-rata qty per hari operasional.
+- Hitung kebutuhan stok dengan buffer 15%.
+
+Rumus:
+
+rata_rata_qty = total_qty / jumlah_hari_operasional
+
+rekomendasi_stok = Math.ceil(rata_rata_qty * 1.15)
+
+Penting:
+- Gunakan data historis per kombinasi hari dan jam jika tersedia.
+- Untuk menyederhanakan prototype, gunakan rata-rata qty per hari operasional pada jam tersebut.
+- Jumlah stok harus dihitung oleh kode.
+- Gemini tidak boleh mengubah jumlah rekomendasi stok.
+- Jika ingin menampilkan rekomendasi stok dalam satuan porsi, jelaskan bahwa angka tersebut merupakan estimasi porsi menu, bukan jumlah gram bahan baku.
+
+2. IDENTIFIKASI MENU MARGIN TIPIS
+
+Hitung margin masing-masing menu.
+
+Kategori:
+- Margin rendah: di bawah 35%.
+- Margin normal: 35%-60%.
+- Margin tinggi: di atas 60%.
+
+Identifikasi menu yang:
+- Memiliki total qty tinggi.
+- Memiliki margin rendah.
+
+Gunakan perhitungan kode untuk menentukan daftar menu tersebut.
+
+3. IDENTIFIKASI JAM SEPI
+
+Gunakan hasil klasifikasi jam dari dashboard.
+
+AI boleh mengusulkan strategi promo, tetapi tidak boleh membuat klaim angka baru.
+
+4. JSON INPUT UNTUK GEMINI
+
+Buat satu objek JSON terstruktur yang berisi:
+
+{
+  "business_name": "Kopi Senja",
+  "period": {
+    "start": "2026-09-01",
+    "end": "2026-10-30",
+    "total_days": 60
+  },
+  "summary": {
+    "total_revenue": 0,
+    "total_qty": 0,
+    "peak_hour": "08:00",
+    "busiest_day": "Sabtu",
+    "slowest_day": "Senin"
+  },
+  "hourly_analysis": [
+    {
+      "hour": "08:00",
+      "average_qty": 0,
+      "classification": "busy"
+    }
+  ],
+  "top_menus": [
+    {
+      "name": "Kopi Susu Senja",
+      "qty": 0,
+      "revenue": 0,
+      "margin_percent": 0
+    }
+  ],
+  "stock_recommendations": [
+    {
+      "hour": "08:00",
+      "menu": "Kopi Susu Senja",
+      "average_qty": 0,
+      "recommended_portions": 0,
+      "buffer_percent": 15
+    }
+  ],
+  "low_margin_menus": [
+    {
+      "name": "Kopi Susu Senja",
+      "qty": 0,
+      "margin_percent": 0
+    }
+  ],
+  "slow_hours": [
+    "12:00",
+    "13:00"
+  ]
+}
+
+Nilai angka di atas hanya contoh struktur, bukan nilai hardcoded.
+
+Pastikan JSON dihasilkan secara dinamis berdasarkan dataset pengguna.
+
+5. OUTPUT GEMINI
+
+Gemini wajib memberikan output JSON dengan skema berikut:
+
+{
+  "stock_explanations": [
+    {
+      "hour": "08:00",
+      "menu": "Kopi Susu Senja",
+      "recommended_portions": 12,
+      "explanation": "Siapkan porsi lebih awal karena menu ini memiliki permintaan yang konsisten pada jam tersebut."
+    }
+  ],
+  "slow_hour_promotions": [
+    {
+      "hour": "12:00",
+      "promotion_name": "Promo Coffee Break",
+      "description": "Tawarkan paket minuman dan camilan untuk menarik pelanggan saat jam makan siang.",
+      "target_menu": "Americano",
+      "reason": "Mendorong transaksi pada periode dengan aktivitas penjualan rendah."
+    }
+  ],
+  "low_margin_warnings": [
+    {
+      "menu": "Kopi Susu Senja",
+      "warning": "Menu ini memiliki volume penjualan tinggi tetapi margin relatif tipis.",
+      "suggestion": "Evaluasi diskon atau pertimbangkan penyesuaian biaya bahan baku."
+    }
+  ],
+  "general_insight": "Fokuskan persiapan pada menu dengan permintaan konsisten di jam ramai."
+}
+
+ATURAN OUTPUT AI:
+
+- Wajib JSON valid.
+- Jangan menggunakan Markdown code fence.
+- Jangan menambahkan teks di luar JSON.
+- Jangan menciptakan angka.
+- recommended_portions harus sama persis dengan angka dari input JSON.
+- hour dan menu harus sesuai dengan data input.
+- Jangan merekomendasikan menu yang tidak tersedia.
+- Jangan membuat promosi berdasarkan asumsi yang tidak didukung data.
+- Jika kategori tertentu tidak memiliki data, kembalikan array kosong.
+- Bahasa Indonesia yang sederhana dan mudah dipahami owner kedai.
+- Hindari istilah teknis yang tidak diperlukan.
+
+Gunakan Gemini Structured Output / responseMimeType application/json dan responseSchema jika tersedia.
+
+Validasi output Gemini sebelum ditampilkan:
+- Pastikan JSON dapat diparse.
+- Pastikan seluruh angka rekomendasi stok cocok dengan input.
+- Pastikan jam dan nama menu sesuai.
+- Pastikan struktur array sesuai skema.
+
+Jika output tidak valid, tampilkan fallback tanpa narasi AI.
+
+6. DESAIN KARTU REKOMENDASI
+
+Buat tiga kelompok kartu.
+
+KARTU A: PERSIAPAN STOK
+
+Judul:
+"Siapkan Sebelum Ramai"
+
+Tampilkan:
+- Jam ramai.
+- Nama menu.
+- Rekomendasi jumlah porsi.
+- Penjelasan AI.
+
+Angka porsi harus berasal dari kode.
+
+Contoh:
+08.00
+Kopi Susu Senja
+12 porsi
+
+"Siapkan lebih awal karena menu ini memiliki permintaan yang konsisten."
+
+KARTU B: STRATEGI PROMO JAM SEPI
+
+Judul:
+"Manfaatkan Jam Sepi"
+
+Tampilkan:
+- Jam sepi.
+- Nama ide promo.
+- Deskripsi promo.
+- Menu target.
+- Alasan rekomendasi.
+
+KARTU C: PERINGATAN MARGIN
+
+Judul:
+"Perhatikan Margin Menu"
+
+Tampilkan:
+- Nama menu.
+- Margin aktual dari kode.
+- Total qty.
+- Peringatan AI.
+- Saran perbaikan.
+
+Angka margin dan qty harus berasal dari kode, bukan output AI.
+
+7. LOADING DAN FALLBACK
+
+Saat memanggil Gemini:
+- Tampilkan loading indicator.
+- Pesan: "Sedang menganalisis peluang kedaimu..."
+- Nonaktifkan tombol selama proses berjalan.
+- Tangani error API.
+- Tangani timeout.
+- Tangani output JSON tidak valid.
+
+Jika Gemini gagal:
+- Jangan membuat aplikasi crash.
+- Tetap tampilkan hasil hitungan deterministik.
+- Tampilkan rekomendasi stok berdasarkan kode.
+- Tampilkan daftar menu margin tipis berdasarkan kode.
+- Tampilkan jam sepi.
+- Sembunyikan penjelasan AI atau tampilkan pesan bahwa AI sedang tidak tersedia.
+
+Tambahkan tombol:
+"Coba Analisis AI Lagi"
+
+Jangan melakukan pemanggilan Gemini otomatis berulang kali.
+
+==================================================
+D. DATA SIMULASI KOPI SENJA
+==================================================
+
+Buat dataset simulasi yang realistis dan deterministik.
+
+Periode:
+1 September 2026 sampai 30 Oktober 2026.
+
+Total:
+60 hari kalender.
+
+Jam operasional:
+07.00-21.00.
+
+Target:
+1.500-2.000 baris transaksi.
+
+Buat generator data di dalam aplikasi menggunakan seeded pseudo-random generator.
+
+Gunakan seed tetap:
+20261108
+
+Generator harus selalu menghasilkan dataset yang sama jika dijalankan dengan seed yang sama.
+
+------------------------------
+1. MASTER MENU
+------------------------------
+
+Buat 12 menu berikut.
+
+| No | Nama Menu | Kategori | Harga Jual | HPP |
+|----|-----------|----------|------------|-----|
+| 1 | Kopi Susu Senja | Signature Coffee | 18.000 | 9.900 |
+| 2 | Americano | Coffee | 15.000 | 5.000 |
+| 3 | Cafe Latte | Coffee | 20.000 | 7.000 |
+| 4 | Cappuccino | Coffee | 20.000 | 7.500 |
+| 5 | Caramel Latte | Coffee | 23.000 | 8.000 |
+| 6 | Matcha Latte | Non-Coffee | 22.000 | 8.000 |
+| 7 | Chocolate Cream | Non-Coffee | 20.000 | 7.000 |
+| 8 | Hazelnut Coffee | Coffee | 23.000 | 8.000 |
+| 9 | Vanilla Latte | Coffee | 21.000 | 7.500 |
+| 10 | Lemon Tea | Tea | 14.000 | 4.500 |
+| 11 | Croffle | Food | 18.000 | 6.000 |
+| 12 | Butter Toast | Food | 16.000 | 5.500 |
+
+Catatan:
+- Kopi Susu Senja sengaja memiliki margin rendah sekitar 45% karena sering mendapatkan diskon.
+- Americano, Cafe Latte, dan menu lainnya memiliki margin lebih baik.
+- Matcha Latte dan Hazelnut Coffee memiliki margin besar.
+
+Margin dihitung menggunakan:
+((harga_jual - hpp) / harga_jual) x 100.
+
+Catatan implementasi:
+Gunakan harga dan HPP di tabel sebagai harga dasar.
+Untuk Kopi Susu Senja, tambahkan simulasi diskon efektif rata-rata 20% pada sebagian transaksi sehingga margin aktual menjadi lebih tipis. Terapkan diskon secara deterministik dan hitung omzet menggunakan harga setelah diskon. HPP tetap.
+
+Namun, jika kompleksitas diskon berisiko mengganggu waktu pengerjaan, gunakan harga efektif rata-rata sebagai harga jual analisis khusus untuk menu tersebut, tetapi jangan sampai terjadi perbedaan antara angka dashboard dan analisis AI.
+
+------------------------------
+2. BOBOT JAM OPERASIONAL
+
+Gunakan bobot berikut untuk menghasilkan probabilitas transaksi berdasarkan jam.
+
+| Jam | Bobot |
+|-----|-------|
+| 07.00 | 1.60 |
+| 08.00 | 2.00 |
+| 09.00 | 1.70 |
+| 10.00 | 0.90 |
+| 11.00 | 0.45 |
+| 12.00 | 0.35 |
+| 13.00 | 0.35 |
+| 14.00 | 0.50 |
+| 15.00 | 0.85 |
+| 16.00 | 1.50 |
+| 17.00 | 1.90 |
+| 18.00 | 2.00 |
+| 19.00 | 1.70 |
+| 20.00 | 0.90 |
+| 21.00 | 0.45 |
+
+Jam ramai yang diharapkan:
+07.00-09.00 dan 16.00-19.00.
+
+Jam sepi:
+11.00-14.00.
+
+Bobot menentukan probabilitas relatif transaksi pada jam tertentu. Jangan mengasumsikan setiap jam memiliki jumlah transaksi yang sama.
+
+------------------------------
+3. BOBOT HARI DALAM SEMINGGU
+
+Gunakan pengali berikut.
+
+| Hari | Pengali |
+|------|---------|
+| Senin | 0.55 |
+| Selasa | 0.85 |
+| Rabu | 0.90 |
+| Kamis | 0.95 |
+| Jumat | 1.15 |
+| Sabtu | 1.55 |
+| Minggu | 1.40 |
+
+Senin harus menjadi hari kerja paling sepi.
+
+------------------------------
+4. BOBOT POPULARITAS MENU
+
+Gunakan bobot relatif berikut.
+
+| Menu | Bobot |
+|------|-------|
+| Kopi Susu Senja | 2.00 |
+| Americano | 1.20 |
+| Cafe Latte | 0.95 |
+| Cappuccino | 0.85 |
+| Caramel Latte | 0.80 |
+| Matcha Latte | 0.75 |
+| Chocolate Cream | 0.65 |
+| Hazelnut Coffee | 0.55 |
+| Vanilla Latte | 0.70 |
+| Lemon Tea | 0.80 |
+| Croffle | 0.60 |
+| Butter Toast | 0.55 |
+
+Pastikan Kopi Susu Senja menjadi menu dengan volume penjualan tertinggi.
+
+Pastikan 1-2 menu dengan margin besar, seperti Matcha Latte dan Hazelnut Coffee, memiliki volume penjualan relatif rendah.
+
+------------------------------
+5. GENERATOR TRANSAKSI
+
+Buat generator dengan logika berikut:
+
+- Periode 60 hari.
+- Transaksi hanya terjadi pada jam operasional.
+- Setiap hari menghasilkan sekitar 25-35 baris transaksi sebelum penyesuaian variasi.
+- Gunakan bobot jam untuk menentukan distribusi waktu transaksi.
+- Gunakan bobot hari untuk mengatur intensitas transaksi.
+- Gunakan bobot menu untuk menentukan pilihan menu.
+- Qty per transaksi biasanya 1-3 porsi.
+- Gunakan variasi waktu menit yang realistis.
+- Hindari seluruh transaksi terjadi tepat pada menit 00.
+- Pastikan total baris transaksi sekitar 1.500-2.000.
+- Data harus tetap konsisten dan deterministik.
+- Pastikan tanggal mencakup seluruh periode simulasi.
+
+Simpan dataset contoh dalam state yang sama dengan dataset hasil upload supaya semua proses analisis menggunakan pipeline yang identik.
+
+PENTING:
+Jangan membuat hasil dashboard secara hardcoded. Dashboard harus selalu dihitung dari data transaksi yang dihasilkan generator.
+
+==================================================
+E. INSTRUKSI TEKNIS
+==================================================
+
+Gunakan stack berikut:
+
+- React.
+- TypeScript jika memungkinkan.
+- Tailwind CSS.
+- Recharts untuk grafik.
+- PapaParse untuk membaca CSV.
+- Gemini API melalui SDK resmi @google/genai jika tersedia.
+- Lucide React untuk ikon.
+
+Struktur kode yang disarankan:
+
+src/
+  components/
+    Navigation.tsx
+    UploadScreen.tsx
+    DashboardScreen.tsx
+    RecommendationScreen.tsx
+    SummaryCard.tsx
+    RecommendationCard.tsx
+
+  utils/
+    csvParser.ts
+    csvValidator.ts
+    sampleDataGenerator.ts
+    analytics.ts
+    formatters.ts
+
+  services/
+    geminiService.ts
+
+  types/
+    index.ts
+
+  App.tsx
+
+Boleh menyederhanakan struktur jika diperlukan untuk memastikan aplikasi cepat selesai.
+
+PEMISAHAN LOGIKA:
+
+1. sampleDataGenerator.ts
+   - Menghasilkan data contoh deterministik.
+
+2. csvParser.ts
+   - Membaca file CSV.
+
+3. csvValidator.ts
+   - Memvalidasi struktur dan isi CSV.
+
+4. analytics.ts
+   - Menghitung seluruh angka dashboard dan rekomendasi stok.
+
+5. geminiService.ts
+   - Mengirim JSON analisis ke Gemini dan menerima JSON rekomendasi.
+
+6. App.tsx
+   - Mengatur navigasi dan state aplikasi.
+
+Jangan meletakkan seluruh logika analisis dan pemanggilan Gemini dalam satu komponen besar jika dapat dipisahkan.
+
+------------------------------
+GEMINI API
+------------------------------
+
+Gunakan model Gemini Flash yang tersedia pada free tier Google AI Studio.
+
+Utamakan model:
+gemini-2.5-flash
+
+Jika model tersebut tidak tersedia pada environment, gunakan model Flash lain yang benar-benar tersedia.
+
+Gunakan environment variable untuk API key.
+
+Jangan pernah menuliskan API key secara hardcoded.
+
+Jangan menampilkan API key pada UI.
+
+Pisahkan pemanggilan API di:
+services/geminiService.ts
+
+Gunakan prompt yang membatasi Gemini sebagai AI Business Advisor untuk UMKM.
+
+System instruction Gemini:
+
+"Kamu adalah konsultan bisnis untuk UMKM kedai kopi kecil di Indonesia. Tugasmu adalah menjelaskan hasil analisis penjualan yang sudah dihitung oleh sistem dan memberikan rekomendasi bisnis praktis. Semua angka yang diberikan oleh sistem merupakan sumber kebenaran. Jangan menghitung ulang, mengubah, atau menciptakan angka. Jangan membuat asumsi faktual yang tidak tersedia di input. Berikan saran yang sederhana, realistis, dan dapat diterapkan oleh kedai kopi kecil dengan 1-3 karyawan. Selalu keluarkan JSON sesuai schema."
+
+Pastikan hanya JSON analisis yang diperlukan yang dikirim ke Gemini.
+
+Hindari mengirim seluruh transaksi mentah karena tidak diperlukan dan dapat menghabiskan token.
+
+Catatan keamanan:
+Jika environment Build menyediakan mekanisme secrets atau environment variable, gunakan mekanisme tersebut. Jangan menganggap variabel VITE_ atau NEXT_PUBLIC_ sebagai rahasia karena dapat terekspos ke browser. Jika aplikasi berjalan sepenuhnya di browser, gunakan mekanisme integrasi Gemini yang disediakan AI Studio untuk prototype dan jelaskan bahwa API key client-side hanya layak untuk demo, bukan deployment produksi.
+
+==================================================
+F. UI/UX DAN VISUAL DESIGN
+==================================================
+
+Buat tampilan yang profesional, bersih, modern, dan hangat.
+
+Tema:
+Coffee shop dashboard.
+
+Palet warna:
+- Background: #F8F5F0
+- Card: #FFFFFF
+- Primary: #6F4E37
+- Secondary: #A67C52
+- Accent: #D8B892
+- Text utama: #34251F
+- Text sekunder: #81736B
+- Success: hijau lembut
+- Warning: amber lembut
+
+Karakter desain:
+- Minimalis.
+- Tidak terlalu ramai.
+- Banyak whitespace.
+- Sudut kartu membulat.
+- Shadow sangat halus.
+- Tipografi jelas.
+- Visualisasi mudah dipahami oleh orang non-teknis.
+- Gunakan ikon sederhana.
+- Jangan menggunakan terlalu banyak warna.
+
+Header:
+Logo teks "StokPas" dengan ikon coffee cup.
+
+Subheading:
+"Smart Inventory Insight for Small Coffee Businesses"
+
+Navigasi:
+Upload Data → Dashboard → Rekomendasi AI.
+
+Gunakan indikator progress untuk menunjukkan tahapan pengguna.
+
+Responsif:
+- Desktop: dashboard menggunakan grid dan tabel yang nyaman dibaca.
+- Mobile: kartu ditumpuk vertikal.
+- Grafik tetap responsif.
+- Tabel dapat di-scroll horizontal jika diperlukan.
+
+Bahasa:
+Seluruh UI menggunakan Bahasa Indonesia yang natural.
+
+Format:
+- Rupiah: Rp 18.000.
+- Persentase: 45,5%.
+- Tanggal: 1 September 2026.
+- Jam: 08.00.
+
+==================================================
+G. BATASAN SCOPE DAN PRIORITAS PENGERJAAN
+==================================================
+
+Waktu pengerjaan hanya sekitar 1,5 jam.
+
+Prioritaskan urutan berikut:
+
+PRIORITAS 1 — WAJIB BERJALAN
+- Upload CSV.
+- Validasi CSV.
+- Pakai data contoh.
+- Generator data deterministik.
+- Perhitungan analisis penjualan.
+- Dashboard jam ramai.
+- Tabel menu andalan.
+- Perhitungan rekomendasi stok.
+- Pemanggilan Gemini.
+- Fallback jika Gemini gagal.
+
+PRIORITAS 2 — KUALITAS UI
+- Desain dashboard yang konsisten.
+- Loading state.
+- Empty state.
+- Error state.
+- Responsif mobile.
+- Format Rupiah.
+
+PRIORITAS 3 — DETAIL TAMBAHAN
+- Drag-and-drop upload.
+- Animasi transisi ringan.
+- Tooltip grafik.
+- Detail insight tambahan.
+
+Jangan mengorbankan fungsionalitas inti demi animasi atau dekorasi.
+
+JANGAN TAMBAHKAN:
+- Login/register.
+- Database.
+- Riwayat analisis.
+- Manajemen stok manual.
+- Sistem kasir.
+- Integrasi POS.
+- Prediksi machine learning.
+- IoT.
+- Chatbot.
+- Halaman pengaturan.
+- Fitur lain di luar tiga layar.
+
+==================================================
+H. ACCEPTANCE CRITERIA / KRITERIA KEBERHASILAN
+==================================================
+
+Aplikasi dianggap berhasil jika seluruh alur berikut berjalan:
+
+1. Pengguna membuka aplikasi dan melihat layar Upload Data.
+2. Pengguna menekan "Pakai Data Contoh".
+3. Sistem menghasilkan dataset Kopi Senja secara deterministik.
+4. Sistem menghitung seluruh statistik menggunakan JavaScript.
+5. Pengguna diarahkan ke Dashboard Jam Ramai.
+6. Dashboard menampilkan total omzet, total qty, jam puncak, hari terlaris/tersepi, grafik jam, dan tabel menu andalan.
+7. Pengguna membuka Rekomendasi AI.
+8. Sistem menghitung jumlah porsi rekomendasi menggunakan rumus rata-rata + buffer 15%.
+9. Sistem mengirim hasil analisis JSON ke Gemini.
+10. Gemini menghasilkan tiga kelompok rekomendasi dalam JSON.
+11. Sistem memvalidasi output dan menampilkan kartu rekomendasi.
+12. Jika Gemini gagal, aplikasi tetap menampilkan rekomendasi berdasarkan perhitungan deterministik.
+13. Pengguna dapat kembali ke Upload Data dan memasukkan CSV lain.
+14. Seluruh dashboard dan rekomendasi otomatis diperbarui berdasarkan CSV yang baru diunggah.
+
+Pastikan tidak ada angka dashboard yang hardcoded.
+
+==================================================
+I. INSTRUKSI EKSEKUSI TERAKHIR
+==================================================
+
+Sekarang langsung bangun aplikasi StokPas.
+
+Jangan hanya memberikan penjelasan, rencana, atau tutorial. Implementasikan kode dan seluruh komponen aplikasi agar bisa langsung dijalankan di Google AI Studio Build.
+
+Kerjakan dengan pendekatan MVP:
+- Buat satu alur utama yang berjalan end-to-end.
+- Pastikan semua tombol memiliki fungsi.
+- Pastikan data contoh bisa langsung dipakai.
+- Pastikan CSV eksternal bisa diproses.
+- Pastikan perhitungan deterministik.
+- Pastikan integrasi Gemini terpisah.
+- Pastikan fallback berfungsi.
+- Pastikan UI terlihat layak untuk presentasi kompetisi.
+
+Jika ada keterbatasan environment Google AI Studio Build, pilih implementasi paling sederhana yang benar-benar dapat dijalankan, bukan membuat fitur palsu.
+
+Jangan bertanya balik. Ambil keputusan teknis yang masuk akal dan langsung implementasikan.
+
+MULAI BANGUN STOKPAS SEKARANG.

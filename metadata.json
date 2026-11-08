@@ -1,0 +1,6 @@
+{
+  "name": "StokPas",
+  "description": "STEPS (Sistem Tepat Estimasi & Pemantauan Stok) - Langkah Tepat, Stok Lebih Akurat. Aplikasi pintar analisis penjualan dan rekomendasi persiapan stok kedai kopi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

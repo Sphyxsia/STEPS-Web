@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #EEEEEE;
+    color: #071B2B;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
